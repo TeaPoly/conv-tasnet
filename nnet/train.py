@@ -7,7 +7,7 @@ import pprint
 import argparse
 import random
 
-from libs.trainer import SiSnrTrainer
+from libs.trainer import SiSnrTrainer, NoiseReconstructTrainer
 from libs.dataset import make_dataloader
 from libs.utils import dump_json, get_logger
 
@@ -20,13 +20,26 @@ logger = get_logger(__name__)
 def run(args):
     gpuids = tuple(map(int, args.gpus.split(",")))
 
+    logger.info("Create ConvTasNet ...")
     nnet = ConvTasNet(**nnet_conf)
-    trainer = SiSnrTrainer(nnet,
+    if args.loss == "nr_loss":
+        logger.info("Create NoiseReconstructTrainer ...")
+        trainer = NoiseReconstructTrainer(nnet,
+                           gpuid=gpuids,
+                           checkpoint=args.checkpoint,
+                           resume=args.resume,
+                           **trainer_conf)
+    else:
+        logger.info("Create SiSnrTrainer ...")
+        trainer = SiSnrTrainer(nnet,
                            gpuid=gpuids,
                            checkpoint=args.checkpoint,
                            resume=args.resume,
                            **trainer_conf)
 
+    logger.info("Finish ConvTasNet.")
+
+    logger.info("Prepare data {} {}.".format(train_data, dev_data))
     data_conf = {
         "train": train_data,
         "dev": dev_data,
@@ -36,17 +49,21 @@ def run(args):
                            ["mdl.json", "trainer.json", "data.json"]):
         dump_json(conf, args.checkpoint, fname)
 
+    logger.info("make_dataloader for train.")
     train_loader = make_dataloader(train=True,
                                    data_kwargs=train_data,
                                    batch_size=args.batch_size,
                                    chunk_size=chunk_size,
                                    num_workers=args.num_workers)
+
+    logger.info("make_dataloader for dev.")
     dev_loader = make_dataloader(train=False,
                                  data_kwargs=dev_data,
                                  batch_size=args.batch_size,
                                  chunk_size=chunk_size,
                                  num_workers=args.num_workers)
 
+    logger.info("runing...")
     trainer.run(train_loader, dev_loader, num_epochs=args.epochs)
 
 
@@ -76,10 +93,14 @@ if __name__ == "__main__":
                         type=int,
                         default=16,
                         help="Number of utterances in each batch")
-    parser.add_argument("--num-workers",
+    parser.add_argument("--num_workers",
                         type=int,
                         default=4,
-                        help="Number of workers used in data loader")
+                        help="Number of workers used in data loader") # Fix by huanglk: name is error.
+    parser.add_argument("--loss",
+                        type=str,
+                        default="",
+                        help="sisnr_loss (Si-SNR loss) or nr_loss (Noise reconstruction loss)") # Add by huanglk: Support NR-Loss
     args = parser.parse_args()
     logger.info("Arguments in command:\n{}".format(pprint.pformat(vars(args))))
 
