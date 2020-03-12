@@ -207,7 +207,7 @@ class ConvTasNet(nn.Module):
                                format(non_linear))
         self.non_linear_type = non_linear
         self.non_linear = supported_nonlinear[non_linear]
-        # n x S => n x N x T, S = 4s*8000 = 32000
+        # n x S => n x N x T, S = 4s*16000 = 64000
         self.encoder_1d = Conv1D(1, N, L, stride=L // 2, padding=0)
         # keep T not change
         # T = int((xlen - L) / (L // 2)) + 1
@@ -235,7 +235,7 @@ class ConvTasNet(nn.Module):
         # using ConvTrans1D: n x N x T => n x 1 x To
         # To = (T - 1) * L // 2 + L
         self.decoder_1d = ConvTrans1D(
-            N, 1, kernel_size=L, stride=L // 2, bias=True)
+            N, 1, kernel_size=L, stride=L // 2, bias=False) # Fix by huanglk: Wave has watermark. (before:True)
         self.num_spks = num_spks
 
     def _build_blocks(self, num_blocks, **block_kwargs):
