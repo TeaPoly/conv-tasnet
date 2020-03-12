@@ -24,13 +24,14 @@ see [requirements.txt](requirements.txt)
 ```
 
 * file format
+
 The ".scp" file is kaldi's script file, its content include UUID and file path. Like this:
 ```
 uuid1 /path/to/file1
 uuid2 /path/to/file2
 ```
 
-mix.scp: Mixture multiple speaker speech from skp1.scp, skp2.scp ... spk$N.scp
+`mix.scp`: Mixture multiple speaker speech from `skp1.scp`, `skp2.scp` ... and `spk$N.scp`.
 ...
 
 ### Reference
