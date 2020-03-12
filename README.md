@@ -23,6 +23,16 @@ see [requirements.txt](requirements.txt)
 ./nnet/compute_si_snr.py /path/to/ref_spk1.scp,/path/to/ref_spk2.scp /path/to/inf_spk1.scp,/path/to/inf_spk2.scp
 ```
 
+* file format
+The ".scp" file is kaldi's script file, its content include UUID and file path. Like this:
+```
+uuid1 /path/to/file1
+uuid2 /path/to/file2
+```
+
+mix.scp: Mixture multiple speaker speech from skp1.scp, skp2.scp ... spk$N.scp
+...
+
 ### Reference
 
 Luo Y, Mesgarani N. TasNet: Surpassing Ideal Time-Frequency Masking for Speech Separation[J]. arXiv preprint arXiv:1809.07454, 2018.
