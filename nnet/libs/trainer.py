@@ -294,9 +294,7 @@ class SiSnrTrainer(Trainer):
 
         def sisnr_loss(permute):
             # for one permute
-            return sum(
-                [self.sisnr(ests[s], refs[t])
-                 for s, t in enumerate(permute)]) / len(permute)
+            return sum([self.sisnr(ests[s], refs[t]) for s, t in enumerate(permute)]) / len(permute)
 
         # P x N
         N = egs["mix"].size(0)
@@ -305,3 +303,46 @@ class SiSnrTrainer(Trainer):
         max_perutt, _ = th.max(sisnr_mat, dim=0)
         # si-snr
         return -th.sum(max_perutt) / N
+
+
+class NoiseReconstructTrainer(Trainer):
+    def __init__(self, *args, **kwargs):
+        super(NoiseReconstructTrainer, self).__init__(*args, **kwargs)
+
+    def snr(self, x, s, eps=1e-8):
+        """
+        Arguments:
+        x: separated signal, N x S tensor
+        s: reference signal, N x S tensor
+        Return:
+        snr: N tensor
+        """
+        def l2norm(mat, keepdim=False):
+            return th.norm(mat, dim=-1, keepdim=keepdim)
+
+        if x.shape != s.shape:
+            raise RuntimeError(
+                "Dimention mismatch when calculate si-snr, {} vs {}".format(
+                    x.shape, s.shape))
+
+        x_zm = x - th.mean(x, dim=-1, keepdim=True)
+        s_zm = s - th.mean(s, dim=-1, keepdim=True)
+
+        return 10 * th.log10(eps + l2norm(s_zm) / (l2norm(s_zm - x_zm) + eps))
+
+    def compute_loss(self, egs):
+        # spks x n x S
+        ests = th.nn.parallel.data_parallel(
+            self.nnet, egs["mix"], device_ids=self.gpuid)
+        # spks x n x S
+        refs = egs["ref"]
+        num_spks = len(refs)
+
+        # N
+        # print(self.snr(ests[0], refs[0]).size())
+        batch_nrloss = sum(
+            [self.snr(ests[p], refs[p]) for p in range(num_spks)])
+
+        # NR-loss
+        N = egs["mix"].size(0)
+        return -th.sum(batch_nrloss) / N
