@@ -2,18 +2,18 @@
 
 set -eu
 
-cpt_dir=exp/conv_tasnet
+cpt_dir=/work/huanglk/Conv-TasNet/exp
 epochs=100
-# constrainted by GPU number & memory
-batch_size=32
-cache_size=16
 
-[ $# -ne 2 ] && echo "Script error: $0 <gpuid> <cpt-id>" && exit 1
+batch_size=20
+loss=nr_loss
+num_workers=10
 
 ./nnet/train.py \
-  --gpu $1 \
+  --gpu 0,1 \
   --epochs $epochs \
   --batch-size $batch_size \
-  --cache-size $cache_size \
-  --checkpoint $cpt_dir/$2 \
-  > $2.train.log 2>&1
+  --checkpoint $cpt_dir/nrloss \
+  --loss $loss \
+  --num_workers $num_workers \
+  
