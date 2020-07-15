@@ -1,4 +1,4 @@
-Thanks to Keisuke Kinoshita for help to fix some problem.
+Thanks Keisuke Kinoshita for helping me to solve problems.
 
 ## ConvTasNet
 
